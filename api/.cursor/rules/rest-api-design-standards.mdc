@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+- Use RESTful API design principles with proper HTTP methods: GET (read), POST (create), PUT/PATCH (update), DELETE (remove).
+- Structure API endpoints using nouns, not verbs: /users, /messages, /conversations.
+- Use nested resources for related entities: /users/{id}/messages.
+- Implement consistent response format with data envelope: { success: boolean, data: any, error?: string }.
+- Use proper HTTP status codes: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Internal Server Error.
+- Implement request validation using Zod or Joi before processing.
+- Return appropriate error messages that help client-side debugging without exposing internals.
+- Implement pagination with consistent cursor/limit/offset patterns.
+- Use query parameters for filtering, sorting, and field selection.
+- Version APIs using URL prefix: /api/v1/, /api/v2/.
+- Document all endpoints with clear descriptions of request/response formats.
+- Implement WebSocket endpoints for real-time features (chat notifications).
+- Use consistent naming conventions for API endpoints (kebab-case or camelCase).
+- Return timestamps in ISO 8601 format (UTC preferred).
+- Implement request ID tracking for debugging and logging correlation.

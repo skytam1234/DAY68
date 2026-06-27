@@ -1,0 +1,50 @@
+---
+description: Quy tắc chạy project ChatAPI - kiểm tra và kill port 3000 trước khi khởi chạy
+alwaysApply: true
+---
+
+# Quy Tắc Chạy Project ChatAPI
+
+## Luôn kiểm tra port 3000 trước khi chạy dự án
+
+Khi được yêu cầu chạy dự án ChatAPI (backend), phải tuân theo quy trình sau:
+
+### Quy trình bắt buộc
+
+1. **Kiểm tra port 3000**: Trước khi chạy dự án, luôn kiểm tra xem có dịch vụ nào đang chạy trên cổng 3000 không.
+
+2. **Kill process nếu có**: Nếu có dịch vụ đang chạy trên port 3000, phải kill nó trước bằng lệnh:
+   ```bash
+   # Tìm và kill process trên port 3000 (Windows)
+   for /f "tokens=5" %a in ('netstat -ano ^| findstr :3000') do taskkill /F /PID %a
+   ```
+
+3. **Khởi chạy dev server**: Sau khi đã kill thành công, mới tiến hành chạy project:
+   ```bash
+   cd d:/ChatAppLikeZalo/ChatAPI && npm run dev
+   ```
+
+### Tại sao phải làm vậy?
+
+- Port 3000 là cổng mặc định của ChatAPI server
+- Nếu có instance cũ đang chạy, có thể gây xung đột port
+- Đảm bảo luôn khởi chạy phiên bản mới nhất của ứng dụng
+
+### Thứ tự thực hiện
+
+```
+1. Kiểm tra port 3000
+       ↓
+2. Có process? → Kill nó
+       ↓
+3. Chạy npm run dev
+       ↓
+4. Thông báo cho user
+```
+
+### Lưu ý quan trọng
+
+- Luôn thực hiện kill port **trước** khi chạy `npm run dev`
+- Không bỏ qua bước kiểm tra port
+- Nếu có lỗi khi kill, vẫn tiếp tục thử chạy dev server (port có thể đã được giải phóng)
+- Thông báo cho user khi khởi chạy thành công kèm URL (http://localhost:3000)

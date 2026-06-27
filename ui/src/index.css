@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e2e8f0;
+  background:
+    radial-gradient(ellipse at top left, rgba(99,102,241,0.15), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(168,85,247,0.12), transparent 50%),
+    #020617;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.typing-caret::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #94a3b8;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: caret-blink 1s ease-in-out infinite;
+}
+
+.markdown p { margin: 0.25rem 0; }
+.markdown ul { list-style: disc; padding-left: 1.25rem; margin: 0.25rem 0; }
+.markdown ol { list-style: decimal; padding-left: 1.25rem; margin: 0.25rem 0; }
+.markdown code {
+  background: rgba(148,163,184,0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.9em;
+}
+.markdown pre {
+  background: rgba(15,23,42,0.9);
+  padding: 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.markdown pre code { background: transparent; padding: 0; }
+.markdown strong { font-weight: 600; color: #f1f5f9; }

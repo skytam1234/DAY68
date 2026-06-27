@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+- Use Prisma Client for all database operations with proper connection pooling.
+- Define database schema in schema.prisma using clear, descriptive model names.
+- Use PascalCase for model names and camelCase for fields following Prisma conventions.
+- Implement migrations using Prisma Migrate (prisma migrate dev, prisma migrate deploy).
+- Use Prisma Studio for development visualization (npx prisma studio).
+- Handle database transactions with $transaction for operations affecting multiple tables.
+- Use select and include options to fetch only required data and avoid over-fetching.
+- Implement pagination using cursor-based or offset pagination for large datasets.
+- Use Prisma's built-in validation decorators or Zod for input validation before database operations.
+- Handle unique constraint violations gracefully with appropriate error messages.
+- Use raw queries sparingly and only when Prisma's API cannot achieve the same result.
+- Implement proper database indexing for frequently queried fields.
+- Use environment variables for DATABASE_URL and never hardcode connection strings.
+- Run prisma generate after schema changes to update the client.
+- Implement soft deletes using deletedAt field where appropriate.
+- Use Prisma's middleware or extensions for cross-cutting concerns.

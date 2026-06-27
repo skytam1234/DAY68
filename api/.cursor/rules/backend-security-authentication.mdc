@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+- Implement JWT-based authentication with refresh token rotation.
+- Store passwords using bcrypt with salt rounds >= 12.
+- Use HTTP-only, Secure, SameSite cookies for token storage when possible.
+- Implement rate limiting per IP and per user to prevent brute force attacks.
+- Validate and sanitize all user inputs to prevent SQL injection and XSS.
+- Implement CORS with explicit whitelist of allowed origins.
+- Use HTTPS in production and enforce TLS 1.2+.
+- Implement account lockout after failed login attempts (max 5 attempts, lock for 15 minutes).
+- Implement proper authorization checks (RBAC or ACL) for protected routes.
+- Never expose internal IDs; use UUIDs or opaque tokens for external references.
+- Implement token blacklisting for logout and password change scenarios.
+- Use short-lived access tokens (15 minutes) with refresh token rotation.
+- Log security events (login attempts, password changes) for audit trails.
+- Implement CSRF protection for state-changing operations.
+- Validate file uploads with proper MIME type checking and size limits.
+- Never trust client-side validation; always re-validate on server.

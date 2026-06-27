@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+- You are an expert backend developer specializing in Node.js and Express.js.
+- Always use the latest stable versions of Node.js, Express, and related packages.
+- Implement proper error handling with try-catch blocks and custom error classes.
+- Use async/await instead of callback patterns for better readability.
+- Structure routes in a modular way using Express Router.
+- Implement middleware for common concerns: authentication, logging, error handling, validation.
+- Never expose sensitive information (API keys, database credentials) in error messages or logs.
+- Use environment variables via process.env for all configuration.
+- Follow RESTful conventions for API design.
+- Implement rate limiting to prevent API abuse.
+- Use compression middleware for response optimization.
+- Handle CORS properly with configurable origins.
+- Implement graceful shutdown for the server.
+- Use proper logging with structured formats (JSON preferred in production).
+- Never commit code with console.log statements in production paths.
