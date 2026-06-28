@@ -62,13 +62,15 @@ export function useAgentSocket() {
         if (data?.clientId) setClientId(data.clientId);
       });
 
-      // Server-pushed agent events
+      // Server-pushed agent events. NOTE: we do NOT reset `images` here.
+      // Images are accumulated across turns (the agent may loop: turn 1
+      // generate_image → turn 2 synthesise answer). Resetting on every
+      // turn_start would drop earlier images. They live until respond.
       socket.on('turn_start', (data) => {
         setTurn(data.turn);
         setCurrentContent('');
         setCurrentThinking('');
         setToolEvents([]);
-        setImages([]);
         setStreaming(true);
       });
 
@@ -103,6 +105,22 @@ export function useAgentSocket() {
       socket.on('respond', (data) => {
         setTranscript((p) => p + (data.answer || ''));
         setStreaming(false);
+        // Merge backend-supplied images with what we've already collected
+        // via `image` events. Backend may send either form depending on
+        // version, so we union by URL to avoid duplicates.
+        if (Array.isArray(data.images) && data.images.length > 0) {
+          setImages((prev) => {
+            const seen = new Set(prev.map((x) => x.url));
+            const merged = prev.slice();
+            for (const img of data.images) {
+              if (img && img.url && !seen.has(img.url)) {
+                merged.push({ url: img.url, prompt: img.prompt || '' });
+                seen.add(img.url);
+              }
+            }
+            return merged;
+          });
+        }
         if (finalResolveRef.current) {
           finalResolveRef.current({ answer: data.answer, images: data.images || [] });
           finalResolveRef.current = null;
@@ -135,6 +153,7 @@ export function useAgentSocket() {
         finalResolveRef.current = resolve;
         setTranscript('');
         setError(null);
+        setImages([]); // fresh per user turn — backend will repopulate
         fetch(API_BASE + '/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -1,4 +1,6 @@
-// execTool.js — Shell execution with safety checks.
+// execTool.js — Shell execution with safety checks (Vercel AI SDK tool).
+import { tool } from 'ai';
+import { z } from 'zod';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
@@ -19,40 +21,36 @@ function pickShell() {
   return 'cmd.exe';
 }
 
-export const definition = {
-  name: 'exec',
-  description: 'Chạy lệnh shell an toàn trong workspace.',
-  params: {
-    type: 'object',
-    properties: { cmd: { type: 'string' } },
-    required: ['cmd'],
+export const execTool = tool({
+  description: 'Chạy một lệnh shell an toàn trong workspace. KHÔNG dùng cho lệnh nguy hiểm (rm -rf, format, shutdown, v.v.).',
+  parameters: z.object({
+    cmd: z.string().describe('Lệnh shell cần chạy. Ví dụ: "node -v", "ls", "cat package.json".'),
+  }),
+  execute: async ({ cmd }, { clientId = 'unknown' } = {}) => {
+    const check = isDangerousCommand(cmd);
+    if (check.blocked) {
+      logExec({ clientId, cmd, blocked: true, reason: check.reason });
+      return { ok: false, blocked: true, reason: 'blocked: ' + check.reason };
+    }
+    const started = Date.now();
+    try {
+      const { stdout, stderr } = await pexec(cmd, {
+        cwd: config.paths.workspace,
+        timeout: config.limits.execTimeoutMs,
+        maxBuffer: 1024 * 1024,
+        windowsHide: true,
+        shell: pickShell(),
+      });
+      logExec({ clientId, cmd, stdout, stderr, ms: Date.now() - started });
+      return { ok: true, stdout: stdout?.toString() || '', stderr: stderr?.toString() || '', ms: Date.now() - started };
+    } catch (e) {
+      logExec({
+        clientId, cmd,
+        stdout: e.stdout?.toString() || '',
+        stderr: e.stderr?.toString() || e.message,
+        code: e.code, ms: Date.now() - started,
+      });
+      return { ok: false, error: e.message, stdout: e.stdout?.toString() || '', stderr: e.stderr?.toString() || '', code: e.code };
+    }
   },
-};
-
-export async function execute({ cmd }, ctx) {
-  const check = isDangerousCommand(cmd);
-  if (check.blocked) {
-    logExec({ clientId: ctx.clientId, cmd, blocked: true, reason: check.reason });
-    return { ok: false, blocked: true, reason: 'blocked: ' + check.reason };
-  }
-  const started = Date.now();
-  try {
-    const { stdout, stderr } = await pexec(cmd, {
-      cwd: config.paths.workspace,
-      timeout: config.limits.execTimeoutMs,
-      maxBuffer: 1024 * 1024,
-      windowsHide: true,
-      shell: pickShell(),
-    });
-    logExec({ clientId: ctx.clientId, cmd, stdout, stderr, ms: Date.now() - started });
-    return { ok: true, stdout: stdout?.toString() || '', stderr: stderr?.toString() || '', ms: Date.now() - started };
-  } catch (e) {
-    logExec({
-      clientId: ctx.clientId, cmd,
-      stdout: e.stdout?.toString() || '',
-      stderr: e.stderr?.toString() || e.message,
-      code: e.code, ms: Date.now() - started,
-    });
-    return { ok: false, error: e.message, stdout: e.stdout?.toString() || '', stderr: e.stderr?.toString() || '', code: e.code };
-  }
-}
+});

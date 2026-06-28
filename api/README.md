@@ -5,13 +5,22 @@ Backend Node.js cho AI Agent với WebSocket streaming thinking, web search, ima
 ## Chạy
 ```bash
 cd api
-cp .env.example .env  # chỉnh OPENAI_API_KEY, model, base URL
+cp .env.example .env  # chỉnh OPENROUTER_API_KEY, model, base URL
 npm install
 npm run dev
 ```
 
 Server: `http://localhost:4000`
-WebSocket: `ws://localhost:4000/ws`
+Socket.IO: `ws://localhost:4000/socket.io`
+
+### Model mặc định
+
+`openai/gpt-oss-20b:free` — model OpenAI mới, free trên OpenRouter, hỗ trợ tool calling ổn định.
+
+Các model free khác có thể dùng qua biến `LLM_MODEL` trong `.env`:
+- `meta-llama/llama-3.3-70b-instruct:free`
+- `qwen/qwen3-coder:free`
+- `openrouter/free` (router tự chọn free model phù hợp với tool calling)
 
 ## Endpoints
 - `GET /api/health` — kiểm tra trạng thái + config.

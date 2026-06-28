@@ -7,6 +7,7 @@ import ThinkingBubble from './components/ThinkingBubble';
 import MessageBubble from './components/MessageBubble';
 import MicrophoneButton from './components/MicrophoneButton';
 import FileUpload from './components/FileUpload';
+import SlashCommandPopup, { filterCommands } from './components/SlashCommandPopup';
 
 const SYSTEM_HINT = `Xin chào! Tôi là AI Agent với các khả năng:
 
@@ -44,6 +45,40 @@ export default function App() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const [pendingAttachment, setPendingAttachment] = useState(null);
+
+  // Slash command autocomplete state
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashIndex, setSlashIndex] = useState(0);
+
+  // Detect when the current input is a slash command being typed.
+  // Active only when the cursor is at the end of a `/`-prefixed token.
+  const slashInfo = (() => {
+    const t = input;
+    if (!t) return null;
+    // Allow slash at start or after whitespace (mid-sentence `/` is rare here).
+    const lastSpace = t.lastIndexOf(' ');
+    const lastNewline = t.lastIndexOf('\n');
+    const boundary = Math.max(lastSpace, lastNewline);
+    const token = boundary >= 0 ? t.slice(boundary + 1) : t;
+    if (!token.startsWith('/')) return null;
+    if (/\s/.test(token.slice(1))) return null; // already has args, hide popup
+    return token;
+  })();
+  const slashActive = !!slashInfo;
+  const slashItems = slashActive ? filterCommands(slashInfo) : [];
+
+  useEffect(() => {
+    if (slashActive) {
+      setSlashOpen(true);
+      setSlashIndex(0);
+    } else {
+      setSlashOpen(false);
+    }
+  }, [slashInfo, slashActive]);
+
+  // Close popup when clicking outside the popup area (handled by onMouseDown
+  // inside the list to avoid stealing focus from the textarea).
+  const popupRef = useRef(null);
 
   // Auto-append speech transcript to input while listening
   useEffect(() => {
@@ -102,7 +137,56 @@ export default function App() {
     }
   }, [input, streaming, messages, pendingAttachment, sendChat, speech]);
 
+  const confirmSlashSelection = useCallback((idx) => {
+    if (!slashActive) return;
+    const items = slashItems;
+    const item = items[Math.max(0, Math.min(idx, items.length - 1))];
+    if (!item) return;
+    // Replace the `/token` part of the input with the chosen command.
+    const t = input;
+    const lastSpace = t.lastIndexOf(' ');
+    const lastNewline = t.lastIndexOf('\n');
+    const boundary = Math.max(lastSpace, lastNewline);
+    const prefix = boundary >= 0 ? t.slice(0, boundary + 1) : '';
+    const next = prefix + item.cmd + ' ';
+    setInput(next);
+    setSlashOpen(false);
+    setSlashIndex(0);
+    // Re-focus textarea and place cursor at end.
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        const len = next.length;
+        el.setSelectionRange?.(len, len);
+      }
+    });
+  }, [slashActive, slashItems, input]);
+
   const onKey = (e) => {
+    // Slash popup keyboard handling takes precedence.
+    if (slashActive && slashOpen && slashItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSlashIndex((i) => (i + 1) % slashItems.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSlashIndex((i) => (i - 1 + slashItems.length) % slashItems.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        confirmSlashSelection(slashIndex);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSlashOpen(false);
+        return;
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       send();
@@ -235,22 +319,51 @@ export default function App() {
               onStart={speech.start}
               onStop={speech.stop}
             />
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKey}
-              placeholder={
-                streaming
-                  ? 'Agent đang trả lời…'
-                  : speech.listening
-                    ? 'Đang nghe bạn nói…'
-                    : 'Hỏi gì đó, hoặc /help để xem lệnh…'
-              }
-              rows={1}
-              className="flex-1 resize-none bg-slate-800/60 border border-slate-700/60 rounded-2xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 max-h-40"
-              style={{ minHeight: '42px' }}
-            />
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKey}
+                placeholder={
+                  streaming
+                    ? 'Agent đang trả lời…'
+                    : speech.listening
+                      ? 'Đang nghe bạn nói…'
+                      : 'Hỏi gì đó, hoặc / để xem lệnh…'
+                }
+                rows={1}
+                className="w-full resize-none bg-slate-800/60 border border-slate-700/60 rounded-2xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 max-h-40"
+                style={{ minHeight: '42px' }}
+              />
+              <SlashCommandPopup
+                open={slashOpen && slashItems.length > 0}
+                query={slashInfo || ''}
+                activeIndex={slashIndex}
+                onHover={setSlashIndex}
+                onSelect={(item) => {
+                  const t = input;
+                  const lastSpace = t.lastIndexOf(' ');
+                  const lastNewline = t.lastIndexOf('\n');
+                  const boundary = Math.max(lastSpace, lastNewline);
+                  const prefix = boundary >= 0 ? t.slice(0, boundary + 1) : '';
+                  const next = prefix + item.cmd + ' ';
+                  setInput(next);
+                  setSlashOpen(false);
+                  setSlashIndex(0);
+                  requestAnimationFrame(() => {
+                    const el = inputRef.current;
+                    if (el) {
+                      el.focus();
+                      const len = next.length;
+                      el.setSelectionRange?.(len, len);
+                    }
+                  });
+                }}
+                onClose={() => setSlashOpen(false)}
+                popupRef={popupRef}
+              />
+            </div>
             <button
               onClick={send}
               disabled={!input.trim() || streaming}
@@ -263,9 +376,7 @@ export default function App() {
           <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-3">
             <span className="flex items-center gap-1"><Bot size={11} /> Agent</span>
             <span>·</span>
-            <span>/clear xóa chat</span>
-            <span>·</span>
-            <span>/help trợ giúp</span>
+            <span>Gõ <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono">/</kbd> để xem lệnh nhanh</span>
           </div>
         </div>
       </footer>

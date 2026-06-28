@@ -69,11 +69,21 @@ export function attachSocketController(httpServer, opts = {}) {
 /** Emit an event to a specific client. */
 export function sendToClient(clientId, event, data) {
   const entry = clients.get(clientId);
-  if (!entry || !entry.socket.connected) return false;
+  if (!entry || !entry.socket.connected) {
+    logEvent('socket.emit_skip', event, { clientId, reason: !entry ? 'no_entry' : 'not_connected' });
+    return false;
+  }
   try {
     entry.socket.emit(event, data);
+    logEvent('socket.emit', event, {
+      clientId,
+      payloadSize: data ? JSON.stringify(data).length : 0,
+    });
     return true;
-  } catch { return false; }
+  } catch (e) {
+    logEvent('socket.emit.error', e.message, { clientId, event });
+    return false;
+  }
 }
 
 export function getSocketClient(clientId) {

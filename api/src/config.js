@@ -11,7 +11,7 @@ export const config = {
   llm: {
     apiKey: process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || '',
     baseUrl: process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1',
-    model: process.env.LLM_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b:free',
+    model: process.env.LLM_MODEL || 'openai/gpt-oss-20b:free',
   },
   paths: {
     workspace: normPath(process.env.WORKSPACE_DIR || './data/workspace'),
